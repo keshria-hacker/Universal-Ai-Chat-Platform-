@@ -22,6 +22,10 @@ env/
 # --- Database ---
 history/*.db
 history/*.sqlite3
+history/*.bak*
+history/*.old
+history/*.prev
+history/*.tmp
 !history/.gitkeep
 
 # --- Uploaded user files ---
