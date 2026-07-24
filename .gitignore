@@ -1,0 +1,52 @@
+# --- Environment / secrets ---
+.env
+*.env.local
+*.env.*.local
+
+# --- Local agent tooling ---
+.agents/
+.claude/
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+*.pycached
+
+# --- Database ---
+history/*.db
+history/*.sqlite3
+!history/.gitkeep
+
+# --- Uploaded user files ---
+uploads/*
+!uploads/.gitkeep
+
+# --- Debug / temporary files ---
+*.log
+*.debug
+debug*/
+tmp/
+
+# --- Node (if you add tooling later) ---
+node_modules/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# --- IDE / editor dirs ---
+.idea/
+.vscode/
+
+# --- Logs ---
+logs/

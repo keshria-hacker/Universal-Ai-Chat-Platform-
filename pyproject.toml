@@ -1,0 +1,135 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "universal-ai-chat-platform"
+version = "1.1.0"
+description = "Universal AI Chat Platform — multi-provider chat with security hardening"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "TID",  # tidy imports
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate (commented-out code)
+    "PL",   # pylint
+    "TRY",  # tryceratops (try/except style)
+]
+ignore = [
+    "E501",    # line-too-long — ruff format handles this
+    "ARG001",  # allow unused function arguments (e.g. callbacks)
+    "PLR2004", # magic-value-comparison — too noisy for app code
+    "B008",    # function-call-in-default-argument — FastAPI Depends() is intentional
+    "TRY003",  # raise-vanilla-args — long messages in exceptions are fine for app code
+    "ERA001",  # commented-out-code — section headers (# --- Chats ---) are not dead code
+]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "PLR0913",  # too-many-arguments
+    "PLR0915",  # too-many-statements
+    "S101",     # assert-in-test — required for testing
+]
+"backend/llm.py" = [
+    "F811",     # redefined-while-unused — intentional re-exports from providers package
+    "PLC0415",  # import-outside-top-level — lazy imports for circular deps
+    "PLW0603",  # global-statement — singleton cache
+    "PLR0913",  # too-many-arguments — legacy facade with many params
+]
+"backend/providers/**" = [
+    "ARG002",   # unused-method-argument — interface compliance with abstract method signatures
+    "PLC0415",  # import-outside-top-level — lazy imports to avoid circular deps
+    "PLW0603",  # global-statement — singleton/registry pattern
+    "PLR0913",  # too-many-arguments — provider interface signatures
+    "PLR0912",  # too-many-branches — provider-specific fetch/stream logic
+    "PLR0915",  # too-many-statements — provider-specific fetch/stream logic
+    "TRY300",   # try-consider-else — minor style preference
+    "TRY301",   # raise-within-try — exception handling clarity
+]
+"backend/skills/**" = [
+    "PLW0603",  # global-statement — singleton/registry pattern
+    "PLR0911",  # too-many-return-statements — command dispatcher pattern
+    "UP042",    # replace-str-enum — str+enum is intentional for API serialization
+]
+"backend/migrations/**" = [
+    "E402",     # module-import-not-at-top-of-file — Alembic auto-generated
+    "PLC0415",  # import-outside-top-level — Alembic auto-generated
+]
+"backend/providers/__init__.py" = [
+    "E402",     # module-import-not-at-top — backward compat imports after __all__
+]
+"backend/main.py" = [
+    "PLC0415",  # import-outside-top-level — middleware registration uses lazy imports
+]
+"backend/document.py" = [
+    "PLC0415",  # import-outside-top-level — lazy import for optional PDF support
+    "PLR0911",  # too-many-return-statements — file-type dispatcher pattern
+    "TRY300",   # try-consider-else — minor style preference
+]
+"backend/ratelimit.py" = [
+    "PLC0415",  # import-outside-top-level — lazy import for optional Redis
+]
+"backend/ratelimit_redis.py" = [
+    "PLC0415",  # import-outside-top-level — redis.asyncio is lazily imported
+    "PLW0603",  # global-statement — singleton store instance
+    "TRY300",   # try-consider-else — minor style preference
+]
+"backend/api.py" = [
+    "PLR0915",  # too-many-statements — chat_stream is intentionally monolithic (SSE generator)
+]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = false  # incremental — enable per-module as we type-harden
+strict = false
+ignore_missing_imports = true
+explicit_package_bases = true
+namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = [
+    "backend/migrations/*",
+    "tests/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "migrations"]

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>Nexus — Universal AI Chat Platform</title>
+<meta name="description" content="One interface for every LLM provider. Chat, compare and build with OpenAI, Anthropic, NVIDIA NIM, Ollama and more." />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- Highlight.js theme (base — swapped dynamically via data-code-theme) -->
+<link id="hljs-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
+<!-- App styles (cache-busting v2 for code theme fix) -->
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body data-code-theme="github-dark">
+
+<!-- ============ FILE:// PROTOCOL DETECTION ============ -->
+<script>
+if (location.protocol === 'file:') {
+  document.write([
+    '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0e0e10;color:#eee;font-family:sans-serif;text-align:center;padding:2rem">',
+    '  <div style="max-width:480px">',
+    '    <h1 style="font-size:1.5rem;margin-bottom:0.5rem">Cannot open directly &#128683;</h1>',
+    '    <p style="color:#999;margin-bottom:1rem;line-height:1.5">',
+    '      This app uses JavaScript modules that cannot be loaded from your local file system.',
+    '      You must serve it via HTTP.</p>',
+    '    <div style="background:#1c1c1f;border-radius:8px;padding:1rem 1.25rem;text-align:left;margin-bottom:1rem">',
+    '      <p style="font-weight:600;margin:0 0 0.5rem 0">Run this command from the project folder:</p>',
+    '      <code style="display:block;background:#000;padding:0.75rem;border-radius:4px;font-size:0.9rem">python start.py</code>',
+    '    </div>',
+    '    <p style="color:#777;font-size:0.85rem">',
+    '      Then open <strong>http://127.0.0.1:5500</strong> in your browser.',
+    '    </p>',
+    '  </div>',
+    '</div>'
+  ].join(''));
+}
+</script>
+
+<!-- ============ MOBILE TOPBAR ============ -->
+<header class="mobile-topbar">
+  <button class="icon-btn" id="mobileSidebarToggle" aria-label="Open menu">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+  <div class="mobile-brand">
+    <img src="assets/logo.svg" alt="" width="22" height="22">
+    <span>Nexus</span>
+  </div>
+  <button class="icon-btn" id="mobileNewChat" title="New chat" aria-label="New chat">
+    <i class="fa-solid fa-pen-to-square"></i>
+  </button>
+</header>
+
+<div class="app-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+
+      <div class="sidebar-header">
+        <div class="brand">
+          <img src="assets/logo.svg" alt="Nexus logo" width="26" height="26">
+          <span class="brand-name">Nexus</span>
+        </div>
+        <button class="icon-btn ghost" id="collapseSidebar" title="Collapse sidebar" aria-label="Collapse sidebar">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+      </div>
+
+      <button class="new-chat-btn" id="newChatBtn" title="Start a new chat (Ctrl K)">
+        <i class="fa-solid fa-plus"></i>
+        <span>New chat</span>
+        <kbd class="kbd-hint">Ctrl K</kbd>
+      </button>
+
+      <div class="sidebar-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchChats" placeholder="Search chats…" autocomplete="off">
+      </div>
+
+      <nav class="chat-history" id="chatHistory" aria-label="Chat history">
+        <!-- Populated by JS -->
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-footer-btn" id="settingsBtn" title="Open settings — providers, appearance, account">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Settings</span>
+        </button>
+        <div class="profile-section" id="profileSection" aria-label="Local account">
+          <div class="profile-avatar" id="profileAvatar">N</div>
+          <div class="profile-meta">
+            <span class="profile-name" id="profileName">Local account</span>
+            <span class="profile-plan">Personal workspace</span>
+          </div>
+          <i class="fa-solid fa-ellipsis-vertical"></i>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main-panel">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="icon-btn expand-btn hidden" id="expandSidebar" title="Expand sidebar" aria-label="Expand sidebar">
+        <i class="fa-solid fa-angles-right"></i>
+      </button>
+
+      <div class="model-selector" id="modelSelector">
+        <button class="model-selector-btn" id="modelSelectorBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span class="provider-dot" style="--dot-color:#D97757"></span>
+          <span class="model-name">Loading models…</span>
+          <span class="model-provider">Checking providers</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+
+        <div class="model-dropdown" id="modelDropdown" role="listbox">
+          <div class="model-dropdown-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="modelSearch" placeholder="Search models or providers…">
+            <button class="search-clear hidden" id="modelSearchClear" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="model-provider-filters" id="modelProviderFilters" aria-label="Filter models by provider"></div>
+          <div class="model-list" id="modelList"><!-- Populated by JS --></div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <span class="conn-pulse" id="connPulse" title="All linked providers reachable">
+          <span class="pulse-dot"></span> Checking providers
+        </span>
+        <button class="icon-btn" id="skillsBtn" title="Skills & tools" aria-label="Skills and tools"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+        <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Chat scroll region -->
+    <div class="chat-scroll" id="chatScroll">
+      <div class="chat-column" id="chatColumn">
+
+        <!-- Welcome screen (shown when no messages) -->
+        <div class="welcome-screen" id="welcomeScreen">
+          <div class="welcome-mark">
+            <img src="assets/logo.svg" alt="" width="46" height="46">
+          </div>
+          <h1>Where should we start?</h1>
+          <p class="welcome-sub">One box, every model. Switch providers mid-conversation without losing context.</p>
+
+          <div class="onboarding-hint hidden" id="onboardingHint">
+            <div class="onboarding-card">
+              <i class="fa-solid fa-key"></i>
+              <div>
+                <strong>Link a provider to get started</strong>
+                <p>Add an API key in Settings or start Ollama with a downloaded model to begin chatting.</p>
+                <button class="btn-secondary" id="onboardingOpenSettings"><i class="fa-solid fa-sliders"></i> Open Settings</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="suggestion-grid">
+            <button class="suggestion-card" data-prompt="Compare the tradeoffs between OpenAI, Anthropic and open-weight models for a document-heavy RAG pipeline.">
+              <i class="fa-solid fa-scale-balanced"></i>
+              <span>Compare providers for a RAG pipeline</span>
+            </button>
+            <button class="suggestion-card" data-prompt="Write a FastAPI streaming endpoint that proxies chat completions using LiteLLM.">
+              <i class="fa-solid fa-code"></i>
+              <span>Draft a FastAPI streaming endpoint</span>
+            </button>
+            <button class="suggestion-card" data-prompt="Summarize the attached document and pull out any action items.">
+              <i class="fa-solid fa-file-lines"></i>
+              <span>Summarize an uploaded document</span>
+            </button>
+            <button class="suggestion-card" data-prompt="Explain how token limits and temperature interact when tuning a model for structured output.">
+              <i class="fa-solid fa-sliders"></i>
+              <span>Explain temperature vs. token limit</span>
+            </button>
+          </div>
+          <p class="welcome-keyhints"><kbd>Ctrl+K</kbd> New chat · <kbd>Ctrl+Shift+C</kbd> Copy response · <kbd>Ctrl+Shift+R</kbd> Regenerate · <kbd>Ctrl+Enter</kbd> Send</p>
+        </div>
+
+        <!-- Messages render here -->
+        <div class="messages" id="messages" aria-live="polite" aria-relevant="additions"></div>
+
+        <!-- Loading skeleton (chat switch) -->
+        <div class="skeleton-wrap hidden" id="skeletonWrap">
+          <div class="skeleton-msg">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-lines"><span></span><span></span><span style="width:60%"></span></div>
+          </div>
+          <div class="skeleton-msg">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-lines"><span></span><span style="width:80%"></span></div>
+          </div>
+        </div>
+
+        <!-- Error state (a single generation failing) -->
+        <div class="error-state hidden" id="errorState" role="alert">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div>
+            <strong>The connection to this provider dropped.</strong>
+            <p>Your message wasn't sent. Check the provider's status or try again.</p>
+            <span class="error-detail"></span>
+            <button class="btn-secondary error-detail-toggle" id="errorDetailToggle" aria-expanded="false" aria-controls="errorDetailContent">
+              <i class="fa-solid fa-chevron-down"></i> Show details
+            </button>
+          </div>
+          <div class="error-btns">
+            <button class="btn-secondary" id="retryBtn"><i class="fa-solid fa-rotate"></i> Retry</button>
+          </div>
+        </div>
+
+        <!-- Backend-down state (the whole app can't reach the server) -->
+        <div class="error-state backend-down hidden" id="backendDownState" role="alert">
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Scroll to bottom -->
+    <button class="scroll-bottom-btn hidden" id="scrollBottomBtn" aria-label="Scroll to latest">
+      <i class="fa-solid fa-arrow-down"></i>
+    </button>
+
+    <!-- Composer -->
+    <div class="composer-wrap">
+      <div class="composer" id="composer">
+
+        <div class="file-chips" id="fileChips"><!-- Populated by JS --></div>
+
+        <div class="composer-row">
+          <button class="icon-btn composer-attach" id="attachBtn" title="Attach files" aria-label="Attach files">
+            <i class="fa-solid fa-paperclip"></i>
+          </button>
+          <input type="file" id="fileInput" multiple hidden
+            accept=".pdf,.docx,.txt,.csv,.xlsx,.pptx,.json,.html,.xml,.py,.java,.js,.c,.cpp,.cs,.go,.rs,.php,.sql,.r">
+
+          <textarea
+            id="messageInput"
+            class="composer-textarea"
+            aria-label="Message Nexus"
+            placeholder="Message Nexus… (Shift+Enter for a new line)"
+            rows="1"
+          ></textarea>
+
+          <button class="send-btn" id="sendBtn" title="Send message" aria-label="Send message">
+            <i class="fa-solid fa-arrow-up"></i>
+          </button>
+          <button class="stop-btn hidden" id="stopBtn" title="Stop generating" aria-label="Stop generating">
+            <i class="fa-solid fa-stop"></i>
+          </button>
+        </div>
+
+        <div class="composer-controls">
+          <button class="pill-control" id="tempControl">
+            <i class="fa-solid fa-temperature-half"></i>
+            <span>Temp <b id="tempValue">0.7</b></span>
+          </button>
+          <div class="temp-popover hidden" id="tempPopover">
+            <label for="tempSlider">Temperature <span id="tempPopoverValue">0.7</span></label>
+            <input type="range" id="tempSlider" min="0" max="2" step="0.1" value="0.7">
+            <div class="temp-scale"><span>Precise</span><span>Balanced</span><span>Creative</span></div>
+          </div>
+
+          <div class="composer-select" id="tokenSelect">
+            <i class="fa-solid fa-hashtag"></i>
+            <button class="select-btn" id="tokenBtn" aria-label="Max output tokens">
+              <span id="tokenLabel">1,024</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="select-dropdown hidden" id="tokenDropdown">
+              <button type="button" data-value="512">512</button>
+              <button type="button" data-value="1024" class="selected">1,024</button>
+              <button type="button" data-value="2048">2,048</button>
+              <button type="button" data-value="4096">4,096</button>
+              <button type="button" data-value="8192">8,192</button>
+            </div>
+          </div>
+
+          <div class="composer-select" id="reasoningSelect" title="Reasoning effort (supported by OpenAI o-series and other reasoning models)">
+            <i class="fa-solid fa-brain"></i>
+            <button class="select-btn" id="reasoningBtn" aria-label="Reasoning effort">
+              <span id="reasoningLabel">Medium</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="select-dropdown hidden" id="reasoningDropdown">
+              <button type="button" data-value="none">Auto</button>
+              <button type="button" data-value="low">Low</button>
+              <button type="button" data-value="medium" class="selected">Medium</button>
+              <button type="button" data-value="high">High</button>
+              <button type="button" data-value="extra_high">Extra high</button>
+            </div>
+          </div>
+
+          <button class="pill-control toggle-pill" id="webSearchToggle" title="Enable web search for this message" aria-pressed="false">
+            <i class="fa-solid fa-globe"></i>
+            <span>Web</span>
+          </button>
+
+          <span class="composer-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to send</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div class="modal-overlay hidden" id="settingsOverlay">
+  <div class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-header">
+      <h2 id="settingsTitle"><i class="fa-solid fa-sliders"></i> Settings</h2>
+      <button class="icon-btn ghost" id="closeSettings" aria-label="Close settings"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="settings-tabs" role="tablist" aria-label="Settings categories">
+      <button class="settings-tab active" role="tab" aria-selected="true" data-tab="general"><i class="fa-solid fa-sliders"></i> General</button>
+      <button class="settings-tab" role="tab" aria-selected="false" data-tab="providers"><i class="fa-solid fa-cloud"></i> Providers</button>
+    </div>
+
+    <div class="settings-body">
+
+      <!-- General tabpanel (Backend + Appearance) -->
+      <div class="settings-tabpanel" role="tabpanel" data-tabpanel="general">
+        <!-- Connection section -->
+        <section class="settings-section">
+          <h3>Connection</h3>
+          <div class="setting-row">
+            <div class="setting-label">
+              <span>Backend URL</span>
+              <small>Where the FastAPI server is running</small>
+            </div>
+            <div class="setting-control">
+              <input type="text" id="backendUrlInput" class="input-mono" placeholder="http://127.0.0.1:8001/api">
+              <button class="btn-secondary" id="testBackendBtn" type="button"><i class="fa-solid fa-plug"></i> Test</button>
+              <span id="backendTestResult" class="backend-test-result"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h3>Appearance</h3>
+
+          <div class="setting-row">
+            <div class="setting-label">
+              <span>Theme</span>
+              <small>Choose how Nexus looks on this device</small>
+            </div>
+            <div class="theme-options" id="themeOptions">
+              <button class="theme-option active" data-theme="dark"><i class="fa-solid fa-moon"></i> Dark</button>
+              <button class="theme-option" data-theme="light"><i class="fa-solid fa-sun"></i> Light</button>
+              <button class="theme-option" data-theme="system"><i class="fa-solid fa-display"></i> System</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">
+              <span>Accent color</span>
+              <small>Used for actions, links and the active model</small>
+            </div>
+            <div class="accent-options" id="accentOptions">
+              <button class="accent-swatch active" data-accent="#6C6BF5" style="--sw:#6C6BF5" aria-label="Indigo"></button>
+              <button class="accent-swatch" data-accent="#4ADE80" style="--sw:#4ADE80" aria-label="Green"></button>
+              <button class="accent-swatch" data-accent="#F5A623" style="--sw:#F5A623" aria-label="Amber"></button>
+              <button class="accent-swatch" data-accent="#F26D6D" style="--sw:#F26D6D" aria-label="Red"></button>
+              <button class="accent-swatch" data-accent="#2F80ED" style="--sw:#2F80ED" aria-label="Blue"></button>
+              <button class="accent-swatch" data-accent="#D97757" style="--sw:#D97757" aria-label="Clay"></button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">
+              <span>Font size</span>
+              <small>Adjust the size of message text</small>
+            </div>
+            <div class="segmented" id="fontSizeSegmented">
+              <button data-size="sm">Small</button>
+              <button data-size="md" class="active">Medium</button>
+              <button data-size="lg">Large</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">
+              <span>Chat width</span>
+              <small>How wide the conversation column is</small>
+            </div>
+            <div class="segmented" id="chatWidthSegmented">
+              <button data-width="narrow">Narrow</button>
+              <button data-width="default" class="active">Default</button>
+              <button data-width="wide">Wide</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">
+              <span>Code block theme</span>
+              <small>Syntax highlighting style</small>
+            </div>
+            <div class="pill-control select-wrap">
+              <i class="fa-solid fa-code"></i>
+              <select id="codeThemeSelect">
+                <option value="github-dark">GitHub Dark</option>
+                <option value="atom-one-dark">Atom One Dark</option>
+                <option value="nord">Nord</option>
+                <option value="dracula">Dracula</option>
+                <option value="github">GitHub Light</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-label">
+              <span>Interface animations</span>
+              <small>Message transitions, typing indicator, hover effects</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="animationToggle" checked>
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <!-- Providers tabpanel (Status + API Keys) -->
+      <div class="settings-tabpanel" role="tabpanel" data-tabpanel="providers" hidden>
+        <section class="settings-section">
+          <h3>Providers</h3>
+          <div class="provider-status-list" id="providerStatusList"><!-- Populated by JS --></div>
+        </section>
+
+        <!-- Provider API Keys -->
+        <section class="settings-section">
+          <h3>API Keys</h3>
+          <div id="providerKeyManager"><!-- Populated by JS --></div>
+        </section>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM DIALOG ============ -->
+<div class="confirm-overlay hidden" id="confirmOverlay">
+  <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle">Delete chat?</h3>
+    <p id="confirmMessage">This action cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn-secondary" id="confirmCancel">Cancel</button>
+      <button class="btn-danger" id="confirmDelete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST CONTAINER ============ -->
+<div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ============ AUTHENTICATION ============ -->
+<div class="auth-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <!-- Loading state shown while connecting to backend -->
+  <div class="auth-loading" id="authLoading">
+    <div class="auth-loading-spinner">
+      <div class="spinner-ring"></div>
+      <div class="spinner-dot"></div>
+    </div>
+    <img src="assets/logo.svg" alt="Nexus" class="auth-logo">
+    <p class="auth-loading-text" id="authLoadingText">Connecting to backend</p>
+    <p class="auth-loading-sub" id="authLoadingSub">Establishing secure connection&hellip;</p>
+    <!-- Error + retry — shown when all auto-retries are exhausted -->
+    <div class="auth-loading-retry hidden" id="authLoadingRetry">
+      <p class="auth-loading-errmsg" id="authLoadingErrmsg"></p>
+      <button class="auth-retry-btn" id="authRetryBtn" type="button">
+        <i class="fa-solid fa-rotate"></i> Retry connection
+      </button>
+    </div>
+  </div>
+
+  <!-- Sign-in / register form -->
+  <form class="auth-card hidden" id="authForm">
+    <img src="assets/logo.svg" alt="Nexus" class="auth-logo">
+    <p class="auth-kicker">PRIVATE AI WORKSPACE</p>
+    <h1 id="authTitle">Sign in to Nexus</h1>
+    <p id="authDescription">Use your local account to access your providers and conversations.</p>
+    <label for="authUsername">Username</label>
+    <input id="authUsername" name="username" autocomplete="username" minlength="3" required>
+    <label for="authPassword">Password</label>
+    <input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="10" required>
+    <label class="auth-confirm hidden" id="authConfirmWrap" for="authConfirmPassword">Confirm password
+      <input id="authConfirmPassword" type="password" autocomplete="new-password" minlength="10">
+    </label>
+    <p class="auth-error hidden" id="authError" role="alert"></p>
+    <button class="auth-submit" id="authSubmit" type="submit">Sign in</button>
+    <p class="auth-forgot-link" id="authForgotLink"><button type="button" class="auth-link-btn" id="authForgotBtn">Forgot password?</button></p>
+    <p class="auth-note" id="authNote">Your session stays on this device.</p>
+  </form>
+
+  <!-- Forgot password form -->
+  <div class="auth-alt-form hidden" id="authForgotForm">
+    <div class="auth-header">
+      <h1>Reset password</h1>
+      <p>Enter your username to get a one-time reset token.</p>
+    </div>
+    <label for="authForgotUsername">Username</label>
+    <input id="authForgotUsername" name="username" minlength="1" required>
+    <p class="auth-error hidden" id="authForgotError" role="alert"></p>
+    <button class="auth-submit" id="authForgotSubmit" type="button">Send reset token</button>
+    <div class="auth-token-box hidden" id="authTokenBox">
+      <p>Your one-time reset token:</p>
+      <code id="authTokenText"></code>
+      <div class="auth-token-actions">
+        <button class="auth-copy-btn" id="authCopyToken" type="button"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button class="auth-submit auth-continue-reset" id="authContinueReset" type="button">I've saved it — continue</button>
+      </div>
+    </div>
+    <p class="auth-back-link"><button type="button" class="auth-link-btn" id="authForgotBack">← Back to sign in</button></p>
+  </div>
+
+  <!-- Reset password form -->
+  <div class="auth-alt-form hidden" id="authResetForm">
+    <div class="auth-header">
+      <h1>Set new password</h1>
+      <p>Enter the reset token and your new password.</p>
+    </div>
+    <label for="authResetToken">Reset token</label>
+    <input id="authResetToken" required>
+    <label for="authResetPassword">New password</label>
+    <input id="authResetPassword" type="password" autocomplete="new-password" minlength="10" required>
+    <label for="authResetConfirm">Confirm new password</label>
+    <input id="authResetConfirm" type="password" minlength="10" required>
+    <p class="auth-error hidden" id="authResetError" role="alert"></p>
+    <p class="auth-success hidden" id="authResetSuccess"></p>
+    <button class="auth-submit" id="authResetSubmit" type="button">Reset password</button>
+    <p class="auth-back-link"><button type="button" class="auth-link-btn" id="authResetBack">← Back to sign in</button></p>
+  </div>
+</div>
+
+<!-- ============ SKILLS MODAL ============ -->
+<div class="modal-overlay hidden" id="skillsOverlay">
+  <div class="modal skills-modal" role="dialog" aria-modal="true" aria-labelledby="skillsModalTitle">
+    <div class="modal-header">
+      <h2 id="skillsModalTitle"><i class="fa-solid fa-wand-magic-sparkles"></i> Skills</h2>
+      <button class="icon-btn ghost close-skills-btn" id="closeSkills" aria-label="Close skills"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="skills-layout">
+      <div class="skills-sidebar">
+        <div class="skills-search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="skillsSearch" placeholder="Search skills…" autocomplete="off">
+        </div>
+        <div class="skills-categories" id="skillsCategories">
+          <button type="button" data-category="all" class="active">All</button>
+          <button type="button" data-category="engineering">Engineering</button>
+          <button type="button" data-category="knowledge">Knowledge</button>
+          <button type="button" data-category="productivity">Productivity</button>
+          <button type="button" data-category="design">Design</button>
+          <button type="button" data-category="system">System</button>
+          <button type="button" data-category="behavioral">Behavioral</button>
+        </div>
+        <div class="skills-invocations" id="skillsInvocations">
+          <button type="button" data-invocation="all" class="active">All triggers</button>
+          <button type="button" data-invocation="user">Manual</button>
+          <button type="button" data-invocation="auto">Auto</button>
+        </div>
+      </div>
+      <div class="skills-list" id="skillsList">
+        <div class="no-results">Loading skills…</div>
+      </div>
+      <div class="skills-detail" id="skillsDetail">
+        <div class="no-results">Select a skill from the list to see its details.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SHORTCUTS MODAL ============ -->
+<div class="modal-overlay hidden" id="shortcutsOverlay">
+  <div class="modal shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+    <div class="modal-header">
+      <h2 id="shortcutsTitle"><i class="fa-solid fa-keyboard"></i> Keyboard shortcuts</h2>
+      <button class="icon-btn ghost" id="closeShortcuts" aria-label="Close shortcuts"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="shortcuts-grid">
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>K</kbd><span>New chat</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd><span>Copy last response</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>R</kbd><span>Regenerate response</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>,</kbd><span>Open settings</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>M</kbd><span>Open model selector</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>T</kbd><span>Toggle theme</span></div>
+      <div class="shortcut-row"><kbd>Ctrl</kbd><kbd>Enter</kbd><span>Send message</span></div>
+      <div class="shortcut-row"><kbd>Esc</kbd><span>Close modals / dropdowns</span></div>
+      <div class="shortcut-row"><kbd>/</kbd><span>Focus message input</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Libraries -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.4/purify.min.js"></script>
+
+<!-- Global DOM helpers (needed by all ES modules) -->
+<script>
+  window.$ = (s) => document.querySelector(s);
+  window.$$ = (s) => Array.from(document.querySelectorAll(s));
+</script>
+
+<!-- App (ES modules) -->
+<script type="module" src="js/app.js"></script>
+</html>
+

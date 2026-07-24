@@ -1,0 +1,97 @@
+# Reference copy of the provider registry that backend/llm.py builds from.
+# This file documents the mapping in one readable place; it is not
+# auto-loaded by the backend in v1.0 (the registry lives in llm.py so
+# LiteLLM's per-provider kwargs stay type-checked). If you outgrow the
+# in-code registry, point llm.py at this file with a small loader.
+#
+# Last updated: 2026-07-15 — matches the PROVIDERS dict and
+# PROVIDER_MODEL_API in llm.py.
+
+providers:
+  anthropic:
+    label: Anthropic
+    env_key: ANTHROPIC_API_KEY
+    local: false
+    model_api:
+      url: https://api.anthropic.com/v1/models
+      auth: header
+      prefix: anthropic
+
+  openai:
+    label: OpenAI
+    env_key: OPENAI_API_KEY
+    local: false
+    model_api:
+      url: https://api.openai.com/v1/models
+      auth: bearer
+      prefix: openai
+
+  nvidia:
+    label: NVIDIA NIM
+    env_key: NVIDIA_NIM_API_KEY
+    local: false
+    model_api:
+      url: https://integrate.api.nvidia.com/v1/models
+      auth: bearer
+      prefix: nvidia_nim
+
+  together:
+    label: Together AI
+    env_key: TOGETHER_API_KEY
+    local: false
+    model_api:
+      url: https://api.together.xyz/v1/models
+      auth: bearer
+      prefix: together_ai  # LiteLLM needs the prefix to route to the correct API
+
+  groq:
+    label: Groq
+    env_key: GROQ_API_KEY
+    local: false
+    model_api:
+      url: https://api.groq.com/openai/v1/models
+      auth: bearer
+      prefix: groq  # LiteLLM needs the prefix to route to the correct API
+
+  openrouter:
+    label: OpenRouter
+    env_key: OPENROUTER_API_KEY
+    local: false
+    model_api:
+      url: https://openrouter.ai/api/v1/models
+      auth: bearer
+      prefix: openrouter  # LiteLLM needs the prefix to route to the correct API
+
+  deepseek:
+    label: DeepSeek
+    env_key: DEEPSEEK_API_KEY
+    local: false
+    model_api:
+      url: https://api.deepseek.com/v1/models
+      auth: bearer
+      prefix: deepseek
+
+  mistral:
+    label: Mistral
+    env_key: MISTRAL_API_KEY
+    local: false
+    model_api:
+      url: https://api.mistral.ai/v1/models
+      auth: bearer
+      prefix: mistral
+
+  gemini:
+    label: Gemini
+    env_key: GEMINI_API_KEY
+    local: false
+    model_api:
+      url: https://generativelanguage.googleapis.com/v1beta/models
+      auth: query
+      query_key: key
+      strip: models/
+      prefix: gemini
+
+  ollama:
+    label: Ollama
+    local: true
+    base_url_env: OLLAMA_BASE_URL

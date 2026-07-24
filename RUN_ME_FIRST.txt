@@ -1,0 +1,45 @@
+=================================================================
+UNIVERSAL AI CHAT PLATFORM - QUICK START
+=================================================================
+
+TO START THE APPLICATION:
+
+1. Double-click: run.bat
+   (This will open a command window and start the servers)
+
+2. Wait about 10 seconds for servers to start
+
+3. Your browser should open automatically to:
+   http://127.0.0.1:5500
+
+4. If browser doesn't open, manually open:
+   http://127.0.0.1:5500
+
+5. To stop the servers, press Ctrl+C in the command window
+
+=================================================================
+
+TROUBLESHOOTING:
+
+If the window opens and closes immediately:
+- This is normal if you double-click start.py
+- Use run.bat instead (it keeps the window open)
+
+If you get errors:
+- Run: python start_debug.py
+- Check: TROUBLESHOOTING.md
+- Read: README.md for full documentation
+
+=================================================================
+
+WHAT'S RUNNING:
+
+Backend (API):  http://127.0.0.1:8001/docs
+Frontend (Web): http://127.0.0.1:5500
+
+Default Login:
+- Register first at /register
+- Then login at /login
+- Or use the guest mode if available
+
+=================================================================

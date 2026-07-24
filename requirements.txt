@@ -1,0 +1,48 @@
+# =============================================================================
+# UniversalAI Backend — requirements.txt
+# Scope: MVP v1.0 (chat, multi-provider routing, streaming, document upload,
+# history). RAG/vector DB (v2), agents/vision/OCR (v3) are left out — add
+# them when you actually build those phases.
+# Install with: pip install -r requirements.txt
+# =============================================================================
+
+# --- Core web framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20      # required for file upload (UploadFile) support
+pydantic==2.11.7
+pydantic-settings==2.7.1      # typed settings loaded from .env
+python-dotenv==1.0.1
+
+# --- LLM provider integration ---
+litellm==1.56.4                # unified client for OpenAI, Anthropic, NVIDIA NIM,
+                                # Ollama, LM Studio, Groq, Together AI, OpenRouter,
+                                # DeepSeek, Mistral, Gemini, vLLM, etc.
+openai==1.58.1                 # used directly by LiteLLM for OpenAI-compatible calls
+
+# --- Document processing ---
+pypdf==5.1.0                   # PDF text extraction (actively maintained PyPDF2 successor)
+python-docx==1.1.2             # DOCX read/write
+openpyxl==3.1.5                # XLSX read/write
+pandas==2.2.3                  # CSV/XLSX tabular parsing
+python-pptx==1.0.2             # PPTX text extraction
+markdown==3.7                  # Markdown -> HTML for docs/preview
+Pillow==11.3.0                 # image handling (also needed ahead of OCR in v3)
+pytesseract==0.3.13            # OCR for scanned PDFs / images (requires system tesseract)
+pdf2image==1.17.0              # Convert PDF pages to images for OCR (requires poppler)
+python-magic-bin==0.4.14         # Magic byte detection for file type validation (includes libmagic binaries for Windows)
+
+# --- Database (SQLite for MVP; swap engine string for Postgres later) ---
+sqlalchemy[asyncio]==2.0.36    # [asyncio] extra guarantees greenlet is installed —
+                                # without it, greenlet is only pulled in indirectly and
+                                # can be skipped depending on platform/Python version
+aiosqlite==0.20.0              # async SQLite driver used via SQLAlchemy
+alembic==1.18.5                # database migrations
+
+# --- Utilities ---
+httpx==0.27.2                  # async HTTP client; pinned <0.28 — litellm requires httpx<0.28.0
+tenacity==9.0.0                # retry/backoff around provider API calls
+loguru==0.7.3                  # structured logging
+pyyaml==6.0.1
+psutil==6.1.1              # optional — frees stale ports on start
+cryptography==42.0.8           # Fernet encryption for API keys at rest
